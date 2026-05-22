@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Jack Trades — Built for Contractors. Powered by Tradesmen.</title>
+    <style>
+        :root {
+            --black: #0a0a0a;
+            --dark: #1a1a1a;
+            --gray: #2a2a2a;
+            --light-gray: #3a3a3a;
+            --gold: #f5b300;
+            --gold-light: #ffc940;
+            --white: #f0f0f0;
+            --off-white: #c0c0c0;
+            --red: #e74c3c;
+            --green: #27ae60;
+            --blue: #3498db;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--black); color: var(--white); min-height: 100vh; overflow-x: hidden;
+        }
+        .splash {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--black); z-index: 10000;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+        .splash.hidden { opacity: 0; pointer-events: none; }
+        .splash-logo {
+            width: 200px; height: 200px;
+            border: 3px solid var(--gold); border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 72px; font-weight: 900; color: var(--gold);
+            margin-bottom: 20px; animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(245,179,0,0.3); }
+            50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(245,179,0,0.5); }
+        }
+        .splash h1 { font-size: 28px; color: var(--gold); letter-spacing: 3px; }
+        .splash p { color: var(--off-white); margin-top: 10px; font-size: 14px; }
+        .app { display: none; min-height: 100vh; }
+        .app.active { display: block; }
+        .header {
+            background: linear-gradient(135deg, var(--dark) 0%, var(--gray) 100%);
+            padding: 15px 20px; display: flex;
+            align-items: center; justify-content: space-between;
+            border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 100;
+        }
+        .header-logo { display: flex; align-items: center; gap: 10px; }
+        .header-logo .logo-icon {
+            width: 40px; height: 40px; background: var(--gold);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-weight: 900; color: var(--black); font-size: 20px;
+        }
+        .header-logo span { font-size: 20px; font-weight: 800; color: var(--gold); letter-spacing: 1px; }
+        .header-user { display: flex; align-items: center; gap: 10px; }
+        .header-user .avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--gold); color: var(--black);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px; cursor: pointer;
+        }
+        .header-user .menu-btn {
+            background: none; border: none; color: var(--gold);
+            font-size: 24px; cursor: pointer; padding: 5px;
+        }
+        .nav-bottom {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--dark); border-top: 1px solid var(--light-gray);
+            display: flex; justify-content: space-around; padding: 10px 0;
+            z-index: 100;
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            color: var(--off-white); text-decoration: none; font-size: 11px;
+            gap: 4px; padding: 5px 15px; cursor: pointer; transition: color 0.2s;
+        }
+        .nav-item.active { color: var(--gold); }
+        .nav-item svg { width: 24px; height: 24px; }
+        .screen { display: none; padding: 20px; padding-bottom: 100px; min-height: calc(100vh - 70px); }
+        .screen.active { display: block; }
+        .card {
+            background: var(--gray); border-radius: 12px;
+            padding: 20px; margin-bottom: 15px;
+            border: 1px solid var(--light-gray);
+        }
+        .card-title { font-size: 18px; font-weight: 700; color: var(--gold); margin-bottom: 10px; }
+        .card-subtitle { color: var(--off-white); font-size: 14px; margin-bottom: 15px; }
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 8px; padding: 14px 24px; border-radius: 10px;
+            border: none; font-size: 16px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; width: 100%; margin-bottom: 10px;
+        }
+        .btn-gold { background: var(--gold); color: var(--black); }
+        .btn-gold:hover { background: var(--gold-light); transform: translateY(-2px); }
+        .btn-outline { background: transparent; color: var(--gold); border: 2px solid var(--gold); }
+        .btn-outline:hover { background: rgba(245,179,0,0.1); }
+        .btn-red { background: var(--red); color: white; }
+        .btn-green { background: var(--green); color: white; }
+        .btn-blue { background: var(--blue); color: white; }
+        .btn-small { padding: 8px 16px; font-size: 14px; width: auto; }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; color: var(--off-white); font-size: 14px; margin-bottom: 8px; font-weight: 500; }
+        .form-input, .form-select, .form-textarea {
+            width: 100%; padding: 14px 16px; border-radius: 10px;
+            border: 1px solid var(--light-gray); background: var(--dark);
+            color: var(--white); font-size: 16px; outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gold); }
+        .form-textarea { min-height: 100px; resize: vertical; }
+        .job-card {
+            background: var(--gray); border-radius: 12px;
+            padding: 16px; margin-bottom: 12px;
+            border-left: 4px solid var(--gold);
+            cursor: pointer; transition: transform 0.2s;
+        }
+        .job-card:hover { transform: translateX(5px); }
+        .job-card-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px; }
+        .job-card-title { font-size: 16px; font-weight: 700; color: var(--white); }
+        .job-card-price { font-size: 18px; font-weight: 800; color: var(--gold); }
+        .job-card-meta { display: flex; gap: 15px; color: var(--off-white); font-size: 13px; margin-bottom: 10px; }
+        .job-card-meta span { display: flex; align-items: center; gap: 5px; }
+        .job-card-desc { color: var(--off-white); font-size: 14px; line-height: 1.5; }
+        .job-card-tags { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .tag {
+            background: rgba(245,179,0,0.15); color: var(--gold);
+            padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+        .tag-blue { background: rgba(52,152,219,0.15); color: var(--blue); }
+        .tag-green { background: rgba(39,174,96,0.15); color: var(--green); }
+        .tag-red { background: rgba(231,76,60,0.15); color: var(--red); }
+        .status {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+        .status-open { background: rgba(52,152,219,0.2); color: var(--blue); }
+        .status-progress { background: rgba(245,179,0,0.2); color: var(--gold); }
+        .status-done { background: rgba(39,174,96,0.2); color: var(--green); }
+        .status-dispute { background: rgba(231,76,60,0.2); color: var(--red); }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-box {
+            background: var(--gray); border-radius: 12px; padding: 16px;
+            text-align: center; border: 1px solid var(--light-gray);
+        }
+        .stat-value { font-size: 28px; font-weight: 800; color: var(--gold); }
+        .stat-label { font-size: 12px; color: var(--off-white); margin-top: 4px; }
+        .profile-header {
+            display: flex; align-items: center; gap: 15px; margin-bottom: 20px;
+        }
+        .profile-avatar {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: var(--gold); color: var(--black);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; font-weight: 800;
+        }
+        .profile-info h2 { font-size: 22px; color: var(--gold); }
+        .profile-info p { color: var(--off-white); font-size: 14px; }
+        .rating { display: flex; gap: 3px; color: var(--gold); font-size: 18px; }
+        .payment-step {
+            display: flex; align-items: center; gap: 15px;
+            padding: 15px; background: var(--dark); border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .payment-step-icon {
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
+        }
+        .payment-step.completed .payment-step-icon { background: var(--green); }
+        .payment-step.pending .payment-step-icon { background: var(--gold); }
+        .payment-step.waiting .payment-step-icon { background: var(--light-gray); }
+        .toggle-group { display: flex; background: var(--dark); border-radius: 10px; padding: 4px; margin-bottom: 20px; }
+        .toggle-btn {
+            flex: 1; padding: 12px; border: none; background: none;
+            color: var(--off-white); font-size: 14px; font-weight: 600;
+            border-radius: 8px; cursor: pointer; transition: all 0.2s;
+        }
+        .toggle-btn.active { background: var(--gold); color: var(--black); }
+        .override-panel {
+            background: linear-gradient(135deg, rgba(231,76,60,0.1) 0%, rgba(245,179,0,0.1) 100%);
+            border: 2px solid var(--red); border-radius: 12px;
+            padding: 20px; margin-bottom: 20px;
+        }
+        .override-panel h3 { color: var(--red); font-size: 18px; margin-bottom: 10px; }
+        .override-panel p { color: var(--off-white); font-size: 14px; margin-bottom: 15px; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in { animation: slideUp 0.4s ease forwards; }
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); z-index: 1000;
+            display: none; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--gray); border-radius: 16px;
+            max-width: 500px; width: 100%; max-height: 90vh;
+            overflow-y: auto; border: 1px solid var(--light-gray);
+        }
+        .modal-header {
+            padding: 20px; border-bottom: 1px solid var(--light-gray);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-header h3 { font-size: 20px; color: var(--gold); }
+        .modal-close { background: none; border: none; color: var(--off-white); font-size: 24px; cursor: pointer; }
+        .modal-body { padding: 20px; }
+        .modal-footer { padding: 20px; border-top: 1px solid var(--light-gray); }
+        .empty-state { text-align: center; padding: 40px 20px; }
+        .empty-state-icon { font-size: 64px; margin-bottom: 15px; }
+        .empty-state h3 { color: var(--gold); font-size: 20px; margin-bottom: 10px; }
+        .empty-state p { color: var(--off-white); font-size: 14px; }
+        .escrow-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(39,174,96,0.2); color: var(--green);
+            padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+        }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        @media (min-width: 768px) {
+            .app { max-width: 480px; margin: 0 auto; border-left: 1px solid var(--gray); border-right: 1px solid var(--gray); }
+            body { background: #000; }
+        }
+    </style>
+</head>
+<body>
+    <div class="splash" id="splash">
+        <div class="splash-logo">JT</div>
+        <h1>JACK TRADES</h1>
+        <p>Built for Contractors. Powered by Tradesmen.</p>
+        <p style="margin-top:30px;font-size:12px;color:#666;">Jackson, MS & Surrounding Areas</p>
+    </div>
+
+    <div class="app" id="auth-screen">
+        <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;">
+            <div style="width:120px;height:120px;border:3px solid var(--gold);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:56px;font-weight:900;color:var(--gold);margin-bottom:25px;">JT</div>
+            <h1 style="font-size:32px;color:var(--gold);margin-bottom:10px;letter-spacing:2px;">JACK TRADES</h1>
+            <p style="color:var(--off-white);margin-bottom:40px;font-size:16px;">The Uber of Tradesmen</p>
+            <div class="toggle-group" style="width:100%;max-width:320px;margin-bottom:30px;">
+                <button class="toggle-btn active" onclick="setUserType('contractor')">I Need Work Done</button>
+                <button class="toggle-btn" onclick="setUserType('worker')">I am a Worker</button>
+            </div>
+            <div id="auth-form" style="width:100%;max-width:320px;">
+                <div class="form-group">
+                    <input type="text" class="form-input" id="auth-name" placeholder="Full Name" required>
+                </div>
+                <div class="form-group">
+                    <input type="tel" class="form-input" id="auth-phone" placeholder="Phone Number" required>
+                </div>
+                <div class="form-group" id="trade-select-group" style="display:none;">
+                    <select class="form-select" id="auth-trade">
+                        <option value="">Select Your Trade</option>
+                        <option value="general-labor">General Labor</option>
+                        <option value="plumbing">Plumbing</option>
+                        <option value="electrical">Electrical</option>
+                        <option value="hvac">HVAC</option>
+                        <option value="carpentry">Carpentry</option>
+                        <option value="painting">Painting</option>
+                        <option value="roofing">Roofing</option>
+                        <option value="masonry">Masonry</option>
+                        <option value="landscaping">Landscaping</option>
+                        <option value="drywall">Drywall</option>
+                        <option value="flooring">Flooring</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <button class="btn btn-gold" onclick="login()">Get Started</button>
+                <p style="color:#666;font-size:12px;margin-top:20px;">By continuing, you agree to Jack Trades Terms of Service</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="app active" id="main-app">
+        <header class="header">
+            <div class="header-logo">
+                <div class="logo-icon">JT</div>
+                <span>JACK TRADES</span>
+            </div>
+            <div class="header-user">
+                <div class="avatar" id="user-avatar" onclick="showProfile()">JD</div>
+                <button class="menu-btn" onclick="toggleMenu()">☰</button>
+            </div>
+        </header>
+
+        <div class="screen active" id="screen-home">
+            <div class="stats-grid animate-in">
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-active">3</div>
+                    <div class="stat-label">Active Jobs</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-earnings">$0</div>
+                    <div class="stat-label" id="stat-earnings-label">This Week</div>
+                </div>
+            </div>
+            <div class="card animate-in" style="animation-delay:0.1s;">
+                <div class="card-title">How Jack Trades Protects Workers</div>
+                <div class="card-subtitle">Contractors pay upfront into escrow. Workers get paid daily or by milestone. Admin override guarantees payment.</div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <span class="escrow-badge">🔒 Escrow Protected</span>
+                    <span class="escrow-badge">⚡ Daily Pay</span>
+                    <span class="escrow-badge">🛡️ Admin Override</span>
+                </div>
+            </div>
+            <div id="home-action-card" class="card animate-in" style="animation-delay:0.2s;">
+                <div class="card-title">Ready to Work?</div>
+                <button class="btn btn-gold" onclick="showScreen('screen-post-job')">Post a Job</button>
+                <button class="btn btn-outline" onclick="showScreen('screen-find-work')">Find Work</button>
+            </div>
+            <div class="card animate-in" style="animation-delay:0.3s;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                    <div class="card-title" style="margin:0;">Recent Jobs</div>
+                    <span style="color:var(--gold);font-size:13px;cursor:pointer;" onclick="showScreen('screen-jobs')">View All →</span>
+                </div>
+                <div id="recent-jobs-list"></div>
+            </div>
+        </div>
+
+        <div class="screen" id="screen-jobs">
+            <div class="toggle-group">
+                <button class="toggle-btn active" onclick="filterJobs('all')">All Jobs</button>
+                <button class="toggle-btn" onclick="filterJobs('open')">Open</button>
+                <button class="toggle-btn" onclick="filterJobs('my')">My Jobs</button>
+            </div>
+            <div id="jobs-list"></div>
+        </div>
+
+        <div class="screen" id="screen-post-job">
+            <div class="card">
+                <div class="card-title">Post a New Job</div>
+                <div class="card-subtitle">$40 flat fee per job. Full payment held in escrow until work is approved.</div>
+                <div class="form-group">
+                    <label class="form-label">Job Title</label>
+                    <input type="text" class="form-input" id="job-title" placeholder="e.g., Bathroom Remodel - Plumbing">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Trade Needed</label>
+                    <select class="form-select" id="job-trade">
+                        <option value="">Select Trade</option>
+                        <option value="general-labor">General Labor</option>
+                        <option value="plumbing">Plumbing</option>
+                        <option value="electrical">Electrical</option>
+                        <option value="hvac">HVAC</option>
+                        <option value="carpentry">Carpentry</option>
+                        <option value="painting">Painting</option>
+                        <option value="roofing">Roofing</option>
+                        <option value="masonry">Masonry</option>
+                        <option value="landscaping">Landscaping</option>
+                        <option value="drywall">Drywall</option>
+                        <option value="flooring">Flooring</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Job Type</label>
+                    <select class="form-select" id="job-type" onchange="updateJobType()">
+                        <option value="daily">Daily Labor (Pay every day)</option>
+                        <option value="milestone">Project with Milestones (Pay in stages)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Location</label>
+                    <input type="text" class="form-input" id="job-location" placeholder="e.g., Jackson, MS - Northside">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Budget / Total Pay</label>
+                    <input type="number" class="form-input" id="job-budget" placeholder="Enter amount in USD">
+                </div>
+                <div id="milestone-section" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label">Number of Milestones</label>
+                        <select class="form-select" id="job-milestones" onchange="updateMilestones()">
+                            <option value="2">2 Stages</option>
+                            <option value="3">3 Stages</option>
+                            <option value="4">4 Stages</option>
+                            <option value="5">5 Stages</option>
+                        </select>
+                    </div>
+                    <div id="milestone-inputs"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" id="job-desc" placeholder="Describe the work needed, materials, timeline..."></textarea>
+                </div>
+                <div style="background:var(--dark);padding:15px;border-radius:10px;margin-bottom:20px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                        <span style="color:var(--off-white);">Worker Pay</span>
+                        <span style="color:var(--white);font-weight:600;" id="preview-worker-pay">$0</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                        <span style="color:var(--off-white);">Platform Fee</span>
+                        <span style="color:var(--gold);font-weight:600;">$40.00</span>
+                    </div>
+                    <div style="border-top:1px solid var(--light-gray);padding-top:8px;display:flex;justify-content:space-between;">
+                        <span style="color:var(--white);font-weight:700;">Total Escrow</span>
+                        <span style="color:var(--gold);font-weight:800;" id="preview-total">$40.00</span>
+                    </div>
+                </div>
+                <button class="btn btn-gold" onclick="postJob()">Post Job & Pay Escrow</button>
+                <p style="color:#666;font-size:12px;text-align:center;margin-top:10px;">Funds held securely until work is approved</p>
+            </div>
+        </div>
+
+        <div class="screen" id="screen-find-work">
+            <div class="toggle-group">
+                <button class="toggle-btn active" onclick="filterWork('all')">All</button>
+                <button class="toggle-btn" onclick="filterWork('daily')">Daily Pay</button>
+                <button class="toggle-btn" onclick="filterWork('milestone')">Projects</button>
+            </div>
+            <div id="work-list"></div>
+        </div>
+
+        <div class="screen" id="screen-job-detail">
+            <button class="btn btn-outline btn-small" onclick="goBack()" style="width:auto;margin-bottom:15px;">Back</button>
+            <div id="job-detail-content"></div>
+        </div>
+
+        <div class="screen" id="screen-payments">
+            <div class="card">
+                <div class="card-title">Payment Center</div>
+                <div class="card-subtitle">Escrow-protected payments. Daily pay for laborers. Milestones for tradesmen.</div>
+            </div>
+            <div id="payments-list"></div>
+            <div class="card" style="margin-top:20px;">
+                <div class="card-title">Payment Rules</div>
+                <div style="color:var(--off-white);font-size:14px;line-height:1.8;">
+                    <p><strong style="color:var(--gold);">Daily Labor:</strong> Contractor approves end of day &rarr; payment releases automatically</p>
+                    <p><strong style="color:var(--gold);">Milestone Projects:</strong> Contractor approves each stage &rarr; partial payment releases</p>
+                    <p><strong style="color:var(--red);">Admin Override:</strong> If contractor refuses to approve completed work, admin can release funds</p>
+                    <p><strong style="color:var(--gold);">$40 Flat Fee:</strong> Per job, paid by contractor</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="screen" id="screen-messages">
+            <div id="messages-list"></div>
+        </div>
+
+        <div class="screen" id="screen-profile">
+            <div class="profile-header">
+                <div class="profile-avatar" id="profile-avatar">JD</div>
+                <div class="profile-info">
+                    <h2 id="profile-name">John Doe</h2>
+                    <p id="profile-type">Contractor</p>
+                    <div class="rating" id="profile-rating">★★★★★</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Account Stats</div>
+                <div class="stats-grid" style="margin-top:15px;margin-bottom:0;">
+                    <div class="stat-box">
+                        <div class="stat-value" id="profile-jobs">12</div>
+                        <div class="stat-label">Jobs Completed</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="profile-earnings">$2,400</div>
+                        <div class="stat-label">Total Earnings</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Settings</div>
+                <button class="btn btn-outline" onclick="editProfile()">Edit Profile</button>
+                <button class="btn btn-outline" onclick="showScreen('screen-payments')">Payment Methods</button>
+                <button class="btn btn-red" onclick="logout()">Log Out</button>
+            </div>
+        </div>
+
+        <div class="screen" id="screen-admin">
+            <div class="override-panel">
+                <h3>🛡️ Admin Override Panel</h3>
+                <p>As platform owner, you have full authority to release escrow funds when contractors refuse to approve completed work. This protects workers.</p>
+            </div>
+            <div class="card">
+                <div class="card-title">Pending Disputes</div>
+                <div id="disputes-list"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">All Escrow Transactions</div>
+                <div id="all-escrow-list"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">Platform Revenue</div>
+                <div class="stats-grid" style="margin-top:15px;margin-bottom:0;">
+                    <div class="stat-box">
+                        <div class="stat-value" id="admin-revenue">$0</div>
+                        <div class="stat-label">Total Revenue</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="admin-jobs">0</div>
+                        <div class="stat-label">Jobs Posted</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-bottom">
+            <a class="nav-item active" onclick="showScreen('screen-home')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Home
+            </a>
+            <a class="nav-item" onclick="showScreen('screen-jobs')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+                Jobs
+            </a>
+            <a class="nav-item" onclick="showScreen('screen-post-job')" id="nav-post">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                Post
+            </a>
+            <a class="nav-item" onclick="showScreen('screen-payments')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                Pay
+            </a>
+            <a class="nav-item" onclick="showScreen('screen-messages')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                Chat
+            </a>
+        </nav>
+    </div>
+
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Title</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-footer" id="modal-footer"></div>
+        </div>
+    </div>
+    <script>
+        // ===== STATE =====
+        let currentUser = null;
+        let userType = 'contractor';
+        let jobs = [];
+        let payments = [];
+        let messages = [];
+        let disputes = [];
+        let currentScreen = 'screen-home';
+        let previousScreen = null;
+        let selectedJob = null;
+
+        const demoJobs = [
+            {
+                id: 1, title: 'Kitchen Backsplash Install', trade: 'masonry', type: 'milestone',
+                location: 'Jackson, MS - Fondren', budget: 1200, status: 'open',
+                contractor: 'Mike Johnson', worker: null,
+                description: 'Need ceramic tile backsplash installed in kitchen. About 30 sq ft. Materials provided.',
+                milestones: [
+                    { name: 'Prep & Layout', amount: 300, status: 'pending' },
+                    { name: 'Installation', amount: 600, status: 'pending' },
+                    { name: 'Grout & Cleanup', amount: 300, status: 'pending' }
+                ],
+                posted: '2 hours ago', escrowPaid: true
+            },
+            {
+                id: 2, title: 'Yard Cleanup - 2 Days', trade: 'landscaping', type: 'daily',
+                location: 'Jackson, MS - Belhaven', budget: 400, status: 'open',
+                contractor: 'Sarah Williams', worker: null,
+                description: 'Need 2 workers for yard cleanup. Removing debris, trimming hedges. 8 hours/day.',
+                dailyRate: 200, days: 2, posted: '5 hours ago', escrowPaid: true
+            },
+            {
+                id: 3, title: 'Electrical Panel Upgrade', trade: 'electrical', type: 'milestone',
+                location: 'Ridgeland, MS', budget: 3500, status: 'in-progress',
+                contractor: 'David Brown', worker: 'James Wilson',
+                description: 'Upgrade 100 amp to 200 amp panel. Permit required. Licensed electrician only.',
+                milestones: [
+                    { name: 'Permit & Materials', amount: 800, status: 'paid' },
+                    { name: 'Panel Install', amount: 1500, status: 'pending' },
+                    { name: 'Inspection & Final', amount: 1200, status: 'pending' }
+                ],
+                posted: '1 day ago', escrowPaid: true
+            },
+            {
+                id: 4, title: 'Drywall Repair - 3 Rooms', trade: 'drywall', type: 'daily',
+                location: 'Jackson, MS - Northside', budget: 600, status: 'in-progress',
+                contractor: 'Lisa Davis', worker: 'Robert Taylor',
+                description: 'Repair water damaged drywall in 3 rooms. Patching, mudding, sanding.',
+                dailyRate: 300, days: 2, posted: '2 days ago', escrowPaid: true
+            },
+            {
+                id: 5, title: 'Bathroom Plumbing Rough-In', trade: 'plumbing', type: 'milestone',
+                location: 'Jackson, MS - South Jackson', budget: 2000, status: 'open',
+                contractor: 'Tom Harris', worker: null,
+                description: 'New construction bathroom plumbing. Rough-in for toilet, sink, shower.',
+                milestones: [
+                    { name: 'Rough-In', amount: 1000, status: 'pending' },
+                    { name: 'Pressure Test', amount: 500, status: 'pending' },
+                    { name: 'Final Connection', amount: 500, status: 'pending' }
+                ],
+                posted: '3 hours ago', escrowPaid: true
+            }
+        ];
+
+        const demoMessages = [
+            { id: 1, from: 'Mike Johnson', preview: 'Are you available tomorrow morning?', time: '10:30 AM', unread: true },
+            { id: 2, from: 'James Wilson', preview: 'Panel upgrade is going well. Need to...', time: 'Yesterday', unread: false },
+            { id: 3, from: 'Jack Trades Support', preview: 'Your escrow payment was received.', time: '2 days ago', unread: false }
+        ];
+
+        // ===== INIT =====
+        window.onload = function() {
+            document.getElementById('splash').style.display = 'none';
+            jobs = [...demoJobs];
+            renderRecentJobs();
+            renderJobs();
+            renderWork();
+            renderMessages();
+            renderPayments();
+            renderDisputes();
+            renderAdmin();
+        };
+
+        // ===== AUTH =====
+        function setUserType(type) {
+            userType = type;
+            const btns = document.querySelectorAll('#auth-form .toggle-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('trade-select-group').style.display = type === 'worker' ? 'block' : 'none';
+        }
+
+        function login() {
+            const name = document.getElementById('auth-name').value;
+            const phone = document.getElementById('auth-phone').value;
+            if (!name || !phone) { alert('Please fill in all fields'); return; }
+            currentUser = {
+                name: name,
+                phone: phone,
+                type: userType,
+                trade: userType === 'worker' ? document.getElementById('auth-trade').value : null,
+                initials: name.split(' ').map(n => n[0]).join('').toUpperCase()
+            };
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('main-app').classList.add('active');
+            document.getElementById('user-avatar').textContent = currentUser.initials;
+            document.getElementById('profile-avatar').textContent = currentUser.initials;
+            document.getElementById('profile-name').textContent = currentUser.name;
+            document.getElementById('profile-type').textContent = userType === 'contractor' ? 'Contractor' : 'Tradesman';
+            if (userType === 'worker') {
+                document.getElementById('nav-post').style.display = 'none';
+                document.getElementById('home-action-card').innerHTML = '<div class="card-title">Find Work Now</div><button class="btn btn-gold" onclick="showScreen('screen-find-work')">Browse Jobs</button><button class="btn btn-outline" onclick="showScreen('screen-jobs')">My Applications</button>';
+                document.getElementById('stat-earnings-label').textContent = 'Available to Earn';
+            }
+            showScreen('screen-home');
+        }
+
+        function logout() {
+            currentUser = null;
+            location.reload();
+        }
+
+        // ===== NAVIGATION =====
+        function showScreen(screenId) {
+            previousScreen = currentScreen;
+            currentScreen = screenId;
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            const navMap = { 'screen-home': 0, 'screen-jobs': 1, 'screen-post-job': 2, 'screen-payments': 3, 'screen-messages': 4 };
+            const navItems = document.querySelectorAll('.nav-item');
+            if (navMap[screenId] !== undefined && navItems[navMap[screenId]]) {
+                navItems[navMap[screenId]].classList.add('active');
+            }
+            if (screenId === 'screen-jobs') renderJobs();
+            if (screenId === 'screen-find-work') renderWork();
+            if (screenId === 'screen-payments') renderPayments();
+            if (screenId === 'screen-messages') renderMessages();
+            if (screenId === 'screen-admin') renderAdmin();
+            window.scrollTo(0, 0);
+        }
+
+        function goBack() {
+            if (previousScreen) showScreen(previousScreen);
+            else showScreen('screen-jobs');
+        }
+
+        function toggleMenu() {
+            if (currentUser && currentUser.name.toLowerCase().includes('admin')) {
+                showScreen('screen-admin');
+            } else {
+                showScreen('screen-profile');
+            }
+        }
+
+        // ===== JOBS =====
+        function renderRecentJobs() {
+            const container = document.getElementById('recent-jobs-list');
+            const recent = jobs.slice(0, 3);
+            container.innerHTML = recent.map(job => createJobCard(job)).join('');
+        }
+
+        function renderJobs(filter) {
+            const container = document.getElementById('jobs-list');
+            let filtered = jobs;
+            if (filter === 'open') filtered = jobs.filter(j => j.status === 'open');
+            if (filter === 'my') filtered = jobs.filter(j => 
+                (userType === 'contractor' && j.contractor === currentUser?.name) ||
+                (userType === 'worker' && j.worker === currentUser?.name)
+            );
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><h3>No Jobs Found</h3><p>Jobs will appear here when posted</p></div>';
+                return;
+            }
+            container.innerHTML = filtered.map(job => createJobCard(job)).join('');
+        }
+
+        function createJobCard(job) {
+            const statusClass = job.status === 'open' ? 'status-open' : job.status === 'in-progress' ? 'status-progress' : 'status-done';
+            const statusText = job.status === 'open' ? 'Open' : job.status === 'in-progress' ? 'In Progress' : 'Complete';
+            return '<div class="job-card" onclick="showJobDetail(' + job.id + ')"><div class="job-card-header"><div class="job-card-title">' + job.title + '</div><div class="job-card-price">$' + job.budget + '</div></div><div class="job-card-meta"><span>📍 ' + job.location + '</span><span>⏰ ' + job.posted + '</span></div><div class="job-card-desc">' + job.description.substring(0, 80) + '...</div><div class="job-card-tags"><span class="tag">' + job.trade + '</span><span class="tag ' + (job.type === 'daily' ? 'tag-blue' : 'tag-green') + '">' + (job.type === 'daily' ? 'Daily Pay' : 'Milestones') + '</span><span class="status ' + statusClass + '">' + statusText + '</span>' + (job.escrowPaid ? '<span class="escrow-badge">🔒 Escrow</span>' : '') + '</div></div>';
+        }
+
+        function filterJobs(type) {
+            const btns = document.querySelectorAll('#screen-jobs .toggle-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            renderJobs(type);
+        }
+
+        // ===== POST JOB =====
+        function updateJobType() {
+            const type = document.getElementById('job-type').value;
+            document.getElementById('milestone-section').style.display = type === 'milestone' ? 'block' : 'none';
+            updatePreview();
+        }
+
+        function updateMilestones() {
+            const count = parseInt(document.getElementById('job-milestones').value);
+            const container = document.getElementById('milestone-inputs');
+            const budget = parseFloat(document.getElementById('job-budget').value) || 0;
+            const perMilestone = Math.floor(budget / count);
+            let html = '';
+            for (let i = 0; i < count; i++) {
+                html += '<div class="form-group" style="margin-left:20px;"><label class="form-label">Stage ' + (i + 1) + '</label><input type="text" class="form-input milestone-name" placeholder="e.g., Demolition" value="Stage ' + (i + 1) + '"><input type="number" class="form-input milestone-amount" placeholder="Amount" value="' + perMilestone + '" style="margin-top:8px;" onchange="updatePreview()"></div>';
+            }
+            container.innerHTML = html;
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const budget = parseFloat(document.getElementById('job-budget').value) || 0;
+            document.getElementById('preview-worker-pay').textContent = '$' + budget.toFixed(2);
+            document.getElementById('preview-total').textContent = '$' + (budget + 40).toFixed(2);
+        }
+
+        document.getElementById('job-budget')?.addEventListener('input', updatePreview);
+
+        function postJob() {
+            const title = document.getElementById('job-title').value;
+            const trade = document.getElementById('job-trade').value;
+            const type = document.getElementById('job-type').value;
+            const location = document.getElementById('job-location').value;
+            const budget = parseFloat(document.getElementById('job-budget').value);
+            const desc = document.getElementById('job-desc').value;
+            if (!title || !trade || !location || !budget || !desc) { alert('Please fill in all fields'); return; }
+            const newJob = {
+                id: Date.now(), title: title, trade: trade, type: type, location: location, budget: budget, status: 'open',
+                contractor: currentUser.name, worker: null, description: desc, posted: 'Just now', escrowPaid: true
+            };
+            if (type === 'milestone') {
+                const milestoneNames = document.querySelectorAll('.milestone-name');
+                const milestoneAmounts = document.querySelectorAll('.milestone-amount');
+                newJob.milestones = [];
+                for (let i = 0; i < milestoneNames.length; i++) {
+                    newJob.milestones.push({ name: milestoneNames[i].value, amount: parseFloat(milestoneAmounts[i].value) || 0, status: 'pending' });
+                }
+            } else {
+                newJob.dailyRate = budget;
+                newJob.days = 1;
+            }
+            jobs.unshift(newJob);
+            payments.push({ id: Date.now(), jobId: newJob.id, type: 'escrow', amount: budget + 40, fee: 40, status: 'held', date: new Date().toLocaleDateString() });
+            alert('Job posted! $' + (budget + 40) + ' held in escrow ($40 platform fee included).');
+            showScreen('screen-jobs');
+            renderJobs();
+            renderRecentJobs();
+        }
+
+        // ===== FIND WORK =====
+        function renderWork(filter) {
+            const container = document.getElementById('work-list');
+            let filtered = jobs.filter(j => j.status === 'open' && !j.worker);
+            if (filter === 'daily') filtered = filtered.filter(j => j.type === 'daily');
+            if (filter === 'milestone') filtered = filtered.filter(j => j.type === 'milestone');
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔨</div><h3>No Open Jobs</h3><p>Check back soon for new opportunities</p></div>';
+                return;
+            }
+            container.innerHTML = filtered.map(job => createJobCard(job)).join('');
+        }
+
+        function filterWork(type) {
+            const btns = document.querySelectorAll('#screen-find-work .toggle-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            renderWork(type);
+        }
+
+        // ===== JOB DETAIL =====
+        function showJobDetail(jobId) {
+            selectedJob = jobs.find(j => j.id === jobId);
+            if (!selectedJob) return;
+            const container = document.getElementById('job-detail-content');
+            const isOwner = currentUser && selectedJob.contractor === currentUser.name;
+            const isWorker = currentUser && selectedJob.worker === currentUser.name;
+            const canApply = userType === 'worker' && selectedJob.status === 'open' && !selectedJob.worker;
+            let milestonesHtml = '';
+            if (selectedJob.milestones) {
+                milestonesHtml = '<div class="card"><div class="card-title">Payment Milestones</div>' + selectedJob.milestones.map((m, i) => '<div class="payment-step ' + (m.status === 'paid' ? 'completed' : 'pending') + '"><div class="payment-step-icon">' + (m.status === 'paid' ? '✓' : (i + 1)) + '</div><div style="flex:1;"><div style="font-weight:600;">' + m.name + '</div><div style="color:var(--off-white);font-size:13px;">$' + m.amount + '</div></div><span class="status ' + (m.status === 'paid' ? 'status-done' : 'status-progress') + '">' + (m.status === 'paid' ? 'Paid' : 'Pending') + '</span></div>').join('') + '</div>';
+            }
+            if (selectedJob.type === 'daily') {
+                milestonesHtml = '<div class="card"><div class="card-title">Daily Payment Schedule</div><div class="payment-step pending"><div class="payment-step-icon">1</div><div style="flex:1;"><div style="font-weight:600;">Day 1</div><div style="color:var(--off-white);font-size:13px;">$' + (selectedJob.dailyRate || selectedJob.budget) + ' — Paid at end of day upon approval</div></div><span class="status status-progress">Pending</span></div>' + (selectedJob.days > 1 ? '<div class="payment-step waiting"><div class="payment-step-icon">2</div><div style="flex:1;"><div style="font-weight:600;">Day 2</div><div style="color:var(--off-white);font-size:13px;">$' + (selectedJob.dailyRate || selectedJob.budget) + ' — Paid at end of day upon approval</div></div><span class="status status-open">Upcoming</span></div>' : '') + '</div>';
+            }
+            let actionButtons = '';
+            if (canApply) {
+                actionButtons = '<button class="btn btn-gold" onclick="applyForJob()">Apply for This Job</button>';
+            } else if (isOwner && selectedJob.status === 'in-progress') {
+                actionButtons = '<button class="btn btn-green" onclick="approveWork()">Approve Work & Release Payment</button><button class="btn btn-outline" onclick="openDispute()">Report Issue</button>';
+            } else if (isWorker && selectedJob.status === 'in-progress') {
+                actionButtons = '<button class="btn btn-gold" onclick="markComplete()">Mark Work Complete</button><button class="btn btn-outline" onclick="openDispute()">Contractor Won't Pay</button>';
+            } else if (selectedJob.status === 'open') {
+                actionButtons = '<button class="btn btn-outline" disabled>Job Open — Apply Above</button>';
+            }
+            container.innerHTML = '<div class="card"><div class="job-card-header"><div><div class="job-card-title" style="font-size:22px;margin-bottom:8px;">' + selectedJob.title + '</div><div class="job-card-meta"><span>📍 ' + selectedJob.location + '</span><span>⏰ ' + selectedJob.posted + '</span></div></div><div style="text-align:right;"><div class="job-card-price" style="font-size:28px;">$' + selectedJob.budget + '</div><span class="escrow-badge">🔒 In Escrow</span></div></div><div class="job-card-tags" style="margin-top:15px;"><span class="tag">' + selectedJob.trade + '</span><span class="tag ' + (selectedJob.type === 'daily' ? 'tag-blue' : 'tag-green') + '">' + (selectedJob.type === 'daily' ? 'Daily Pay' : 'Milestone Project') + '</span><span class="status ' + (selectedJob.status === 'open' ? 'status-open' : selectedJob.status === 'in-progress' ? 'status-progress' : 'status-done') + '">' + (selectedJob.status === 'open' ? 'Open' : selectedJob.status === 'in-progress' ? 'In Progress' : 'Complete') + '</span></div></div><div class="card"><div class="card-title">Job Description</div><p style="color:var(--off-white);line-height:1.7;font-size:15px;">' + selectedJob.description + '</p></div><div class="card"><div class="card-title">Contractor</div><div style="display:flex;align-items:center;gap:12px;"><div class="profile-avatar" style="width:50px;height:50px;font-size:20px;">' + selectedJob.contractor.split(' ').map(n=>n[0]).join('') + '</div><div><div style="font-weight:600;">' + selectedJob.contractor + '</div><div style="color:var(--off-white);font-size:13px;">Verified Contractor</div></div></div></div>' + (selectedJob.worker ? '<div class="card"><div class="card-title">Assigned Worker</div><div style="display:flex;align-items:center;gap:12px;"><div class="profile-avatar" style="width:50px;height:50px;font-size:20px;background:var(--green);">' + selectedJob.worker.split(' ').map(n=>n[0]).join('') + '</div><div><div style="font-weight:600;">' + selectedJob.worker + '</div><div style="color:var(--off-white);font-size:13px;">Active on Job</div></div></div></div>' : '') + milestonesHtml + '<div class="card" style="background:linear-gradient(135deg, rgba(245,179,0,0.1) 0%, rgba(245,179,0,0.05) 100%);"><div class="card-title">💰 Payment Protection</div><p style="color:var(--off-white);font-size:14px;line-height:1.7;"><strong style="color:var(--gold);">$' + selectedJob.budget + '</strong> is held in escrow. ' + (selectedJob.type === 'daily' ? 'Worker gets paid daily after contractor approves.' : 'Worker gets paid per milestone after contractor approves each stage.') + ' If contractor refuses to pay for completed work, <strong style="color:var(--red);">Jack Trades Admin can override and release funds</strong>.</p></div>' + actionButtons;
+            showScreen('screen-job-detail');
+        }
+
+        function applyForJob() {
+            if (!selectedJob || !currentUser) return;
+            selectedJob.worker = currentUser.name;
+            selectedJob.status = 'in-progress';
+            alert('You applied for "' + selectedJob.title + '"! The contractor will be notified. Work can begin once approved.');
+            showScreen('screen-jobs');
+            renderJobs();
+        }
+
+        function markComplete() {
+            if (!selectedJob) return;
+            showModal('Mark Work Complete', '<p>Confirm you have completed today's work or this milestone?</p><div class="form-group"><textarea class="form-textarea" placeholder="Describe what was completed..."></textarea></div>', '<button class="btn btn-gold" onclick="submitComplete()">Submit for Approval</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button>');
+        }
+
+        function submitComplete() {
+            closeModal();
+            alert('Work marked complete! Contractor has been notified to approve payment.');
+        }
+
+        function approveWork() {
+            if (!selectedJob) return;
+            showModal('Release Payment', '<p>Approve work and release payment to ' + selectedJob.worker + '?</p><div style="background:var(--dark);padding:15px;border-radius:10px;margin:15px 0;"><div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>Worker Pay</span><span style="color:var(--gold);font-weight:700;">$' + selectedJob.budget + '</span></div><div style="display:flex;justify-content:space-between;"><span>Platform Fee (already paid)</span><span style="color:var(--off-white);">$40</span></div></div>', '<button class="btn btn-green" onclick="confirmApprove()">✓ Approve & Pay</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button>');
+        }
+
+        function confirmApprove() {
+            selectedJob.status = 'done';
+            if (selectedJob.milestones) {
+                selectedJob.milestones.forEach(m => m.status = 'paid');
+            }
+            const payment = payments.find(p => p.jobId === selectedJob.id);
+            if (payment) payment.status = 'released';
+            closeModal();
+            alert('Payment of $' + selectedJob.budget + ' released to ' + selectedJob.worker + '!');
+            showJobDetail(selectedJob.id);
+            renderPayments();
+        }
+
+        function openDispute() {
+            showModal('Request Admin Override', '<p style="color:var(--red);font-weight:600;margin-bottom:10px;">This will alert Jack Trades admin to review and potentially release escrow.</p><div class="form-group"><label class="form-label">Describe the issue</label><textarea class="form-textarea" placeholder="Explain what work was done and why payment is being withheld..."></textarea></div><div class="form-group"><label class="form-label">Upload photos (optional)</label><input type="file" class="form-input" accept="image/*" multiple></div>', '<button class="btn btn-red" onclick="submitDispute()">Submit for Admin Review</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button>');
+        }
+
+        function submitDispute() {
+            disputes.push({
+                id: Date.now(), jobId: selectedJob.id, jobTitle: selectedJob.title,
+                worker: selectedJob.worker, contractor: selectedJob.contractor,
+                amount: selectedJob.budget, status: 'pending', date: new Date().toLocaleDateString()
+            });
+            closeModal();
+            alert('Dispute submitted! Admin will review within 24 hours and can release funds if work was completed.');
+            renderDisputes();
+        }
+
+        // ===== PAYMENTS =====
+        function renderPayments() {
+            const container = document.getElementById('payments-list');
+            if (payments.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💳</div><h3>No Payments Yet</h3><p>Payments will appear when jobs are posted or completed</p></div>';
+                return;
+            }
+            container.innerHTML = payments.map(p => {
+                const job = jobs.find(j => j.id === p.jobId);
+                return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><div><div style="font-weight:700;">' + (job ? job.title : 'Platform Fee') + '</div><div style="color:var(--off-white);font-size:13px;">' + p.date + '</div></div><div style="text-align:right;"><div style="font-size:20px;font-weight:800;color:' + (p.status === 'released' ? 'var(--green)' : p.status === 'held' ? 'var(--gold)' : 'var(--red)') + '">' + (p.status === 'released' ? '-' : '') + '$' + p.amount + '</div><span class="status ' + (p.status === 'released' ? 'status-done' : p.status === 'held' ? 'status-progress' : 'status-dispute') + '">' + (p.status === 'released' ? 'Released' : p.status === 'held' ? 'In Escrow' : 'Disputed') + '</span></div></div>' + (p.fee ? '<div style="color:var(--off-white);font-size:13px;">Includes $' + p.fee + ' platform fee</div>' : '') + '</div>';
+            }).join('');
+        }
+
+        // ===== MESSAGES =====
+        function renderMessages() {
+            const container = document.getElementById('messages-list');
+            if (demoMessages.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div><h3>No Messages</h3><p>Messages will appear when you connect with contractors or workers</p></div>';
+                return;
+            }
+            container.innerHTML = demoMessages.map(m => '<div class="card" style="cursor:pointer;" onclick="openChat(' + m.id + ')"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;"><div style="display:flex;align-items:center;gap:12px;"><div class="profile-avatar" style="width:44px;height:44px;font-size:16px;background:' + (m.from.includes('Support') ? 'var(--blue)' : 'var(--gold)') + '">' + m.from.split(' ').map(n=>n[0]).join('') + '</div><div><div style="font-weight:700;">' + m.from + '</div><div style="color:var(--off-white);font-size:14px;margin-top:2px;">' + m.preview + '</div></div></div><div style="text-align:right;"><div style="color:var(--off-white);font-size:12px;">' + m.time + '</div>' + (m.unread ? '<div style="width:10px;height:10px;background:var(--red);border-radius:50%;margin-left:auto;margin-top:5px;"></div>' : '') + '</div></div></div>').join('');
+        }
+
+        function openChat(msgId) {
+            const msg = demoMessages.find(m => m.id === msgId);
+            showModal(msg.from, '<div style="background:var(--dark);border-radius:12px;padding:15px;min-height:200px;"><div style="background:var(--gray);padding:12px;border-radius:10px;margin-bottom:10px;max-width:80%;"><p style="font-size:14px;">' + msg.preview + '</p><div style="color:var(--off-white);font-size:11px;margin-top:5px;text-align:right;">' + msg.time + '</div></div></div><div style="display:flex;gap:10px;margin-top:15px;"><input type="text" class="form-input" placeholder="Type a message..." style="flex:1;"><button class="btn btn-gold btn-small" style="width:auto;">Send</button></div>', '');
+        }
+
+        // ===== ADMIN =====
+        function renderAdmin() {
+            const totalRevenue = payments.reduce((sum, p) => sum + (p.fee || 0), 0);
+            document.getElementById('admin-revenue').textContent = '$' + totalRevenue;
+            document.getElementById('admin-jobs').textContent = jobs.length;
+        }
+
+        function renderDisputes() {
+            const container = document.getElementById('disputes-list');
+            if (disputes.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--off-white);"><div style="font-size:40px;margin-bottom:10px;">✅</div><p>No active disputes. All workers are getting paid!</p></div>';
+                return;
+            }
+            container.innerHTML = disputes.map(d => '<div class="card" style="border-left:4px solid var(--red);"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;"><div><div style="font-weight:700;color:var(--red);">DISPUTE #' + d.id.toString().slice(-4) + '</div><div style="color:var(--off-white);font-size:14px;margin-top:4px;">' + d.jobTitle + '</div></div><div style="font-size:20px;font-weight:800;color:var(--gold);">$' + d.amount + '</div></div><div style="display:flex;gap:15px;color:var(--off-white);font-size:13px;margin-bottom:15px;"><span>👤 Worker: ' + d.worker + '</span><span>🏢 Contractor: ' + d.contractor + '</span></div><div style="display:flex;gap:10px;"><button class="btn btn-green btn-small" onclick="overrideRelease(' + d.id + ')" style="flex:1;">✓ Override — Pay Worker</button><button class="btn btn-outline btn-small" onclick="rejectDispute(' + d.id + ')" style="flex:1;">Reject Dispute</button></div></div>').join('');
+        }
+
+        function overrideRelease(disputeId) {
+            const dispute = disputes.find(d => d.id === disputeId);
+            if (!dispute) return;
+            const job = jobs.find(j => j.id === dispute.jobId);
+            if (job) {
+                job.status = 'done';
+                if (job.milestones) job.milestones.forEach(m => m.status = 'paid');
+            }
+            payments.push({
+                id: Date.now(), jobId: dispute.jobId, type: 'override',
+                amount: dispute.amount, status: 'released',
+                date: new Date().toLocaleDateString(),
+                note: 'Admin override — contractor refused payment'
+            });
+            disputes = disputes.filter(d => d.id !== disputeId);
+            renderDisputes();
+            renderPayments();
+            showModal('Override Complete', '<div style="text-align:center;"><div style="font-size:64px;margin-bottom:15px;">🛡️</div><h3 style="color:var(--green);margin-bottom:10px;">Funds Released!</h3><p style="color:var(--off-white);line-height:1.6;"><strong>$' + dispute.amount + '</strong> has been released to <strong>' + dispute.worker + '</strong>.<br><br>The worker is protected. Contractor has been notified.</p></div>', '<button class="btn btn-gold" onclick="closeModal()">Done</button>');
+        }
+
+        function rejectDispute(disputeId) {
+            disputes = disputes.filter(d => d.id !== disputeId);
+            renderDisputes();
+        }
+
+        // ===== MODAL =====
+        function showModal(title, body, footer) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-body').innerHTML = body;
+            document.getElementById('modal-footer').innerHTML = footer || '';
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // ===== PROFILE =====
+        function showProfile() {
+            showScreen('screen-profile');
+        }
+
+        function editProfile() {
+            showModal('Edit Profile', '<div class="form-group"><label class="form-label">Full Name</label><input type="text" class="form-input" value="' + (currentUser ? currentUser.name : '') + '"></div><div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" value="' + (currentUser ? currentUser.phone : '') + '"></div><div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" placeholder="your@email.com"></div>', '<button class="btn btn-gold" onclick="closeModal()">Save Changes</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button>');
+        }
+
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+</body>
+</html>
